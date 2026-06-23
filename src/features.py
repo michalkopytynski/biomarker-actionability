@@ -1,7 +1,7 @@
 import pandas as pd
 
 # ── Feature set definitions ───────────────────────────────────────────────────
-# Single source of truth — imported by all downstream notebooks and scripts.
+# Imported by all downstream notebooks and scripts.
 
 BIOLOGICAL_FEATURES = [
     # Demographics
@@ -9,7 +9,7 @@ BIOLOGICAL_FEATURES = [
     # Lipids
     'total_cholesterol_mg_dl', 'hdl_mg_dl', 'ldl_mg_dl', 'triglycerides_mg_dl',
     'chol_hdl_ratio', 'non_hdl_cholesterol',
-    # Glycaemia (HbA1c preferred; glucose retained for completeness)
+    # Glycaemia (HbA1c preferred, glucose retained for completeness)
     'hba1c_pct', 'fasting_glucose_mg_dl',
     # Blood pressure
     'systolic_bp_1', 'diastolic_bp_1', 'pulse_pressure',
@@ -20,14 +20,14 @@ BIOLOGICAL_FEATURES = [
 ]
 
 DIGITAL_FEATURES = [
-    'mims_mean',           # average daily total activity
-    'mims_sd',             # day-to-day variability in activity
-    'mims_daily_cv',       # coefficient of variation (normalised variability)
-    'inactive_min_mean',   # average daily sedentary time
-    'vigorous_min_mean',   # average daily vigorous activity
-    'wake_wear_min_mean',  # average daily wear time (compliance proxy)
-    'nonwear_min_mean',    # average daily non-wear time
-    'valid_days',          # number of valid days (data quality indicator)
+    'mims_mean',          # average daily MIMS sum (total activity volume)
+    'mims_sd',            # day-to-day variability in MIMS
+    'mims_daily_cv',      # coefficient of variation (normalised variability)
+    'valid_min_mean',     # average valid minutes per day (data coverage)
+    'wake_wear_min_mean', # average wake wear time
+    'sleep_min_mean',     # average sleep wear time (inverse activity proxy)
+    'nonwear_min_mean',   # average non-wear time
+    'valid_days',         # number of valid days (data quality indicator)
 ]
 
 COMBINED_FEATURES = BIOLOGICAL_FEATURES + DIGITAL_FEATURES
@@ -59,25 +59,32 @@ def aggregate_accelerometer(
     -------
     DataFrame with one row per participant, columns:
         participant_id, valid_days, mims_mean, mims_sd, mims_daily_cv,
-        inactive_min_mean, vigorous_min_mean, wake_wear_min_mean,
-        nonwear_min_mean
+        valid_min_mean, wake_wear_min_mean, sleep_min_mean, nonwear_min_mean
     """
     accel_raw = df[df['accel_mims_sum_daily'].notna()].copy()
 
+    # The outer merge with non-PAX tables creates duplicate rows for each
+    # accelerometer day.  Deduplicate on the natural key before aggregating.
+    before = len(accel_raw)
+    accel_raw = accel_raw.drop_duplicates(subset=['participant_id', 'accel_day_of_data'])
+    print(f"  Accel dedup: {before:,} → {len(accel_raw):,} rows "
+          f"({before - len(accel_raw):,} duplicates removed)")
+
+    # quality flag 0 = Good day; use < 1 to avoid exact-zero float comparisons
     valid_days = accel_raw[
-        (accel_raw['accel_quality_flag'] == 0) &
+        (accel_raw['accel_quality_flag'] < 1) &
         (accel_raw['accel_wake_wear_min'] >= min_wake_wear_min)
     ]
 
     agg = valid_days.groupby('participant_id').agg(
-        valid_days         =('accel_mims_sum_daily',     'count'),
-        mims_mean          =('accel_mims_sum_daily',     'mean'),
-        mims_sd            =('accel_mims_sum_daily',     'std'),
-        inactive_min_mean  =('accel_awake_inactive_min', 'mean'),
-        vigorous_min_mean  =('accel_vigorous_min',       'mean'),
-        wake_wear_min_mean =('accel_wake_wear_min',      'mean'),
-        nonwear_min_mean   =('accel_nonwear_min',        'mean'),
-        mims_daily_cv      =('accel_mims_sum_daily',     lambda x: x.std() / x.mean()),
+        valid_days        =('accel_mims_sum_daily',  'count'),
+        mims_mean         =('accel_mims_sum_daily',  'mean'),
+        mims_sd           =('accel_mims_sum_daily',  'std'),
+        valid_min_mean    =('accel_valid_min_daily', 'mean'),
+        wake_wear_min_mean=('accel_wake_wear_min',   'mean'),
+        sleep_min_mean    =('accel_sleep_wear_min',  'mean'),
+        nonwear_min_mean  =('accel_nonwear_min',     'mean'),
+        mims_daily_cv     =('accel_mims_sum_daily',  lambda x: x.std() / x.mean()),
     ).reset_index()
 
     agg = agg[agg['valid_days'] >= min_valid_days].reset_index(drop=True)
@@ -93,9 +100,9 @@ def build_biological_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Derived features
     ----------------
-    chol_hdl_ratio      : Total cholesterol / HDL — used in Framingham risk score
-    non_hdl_cholesterol : Total cholesterol - HDL — captures all atherogenic lipoproteins
-    pulse_pressure      : Systolic BP - Diastolic BP — marker of arterial stiffness
+    chol_hdl_ratio      : Total cholesterol / HDL, used in Framingham risk score
+    non_hdl_cholesterol : Total cholesterol - HDL, captures all atherogenic lipoproteins
+    pulse_pressure      : Systolic BP - Diastolic BP, marker of arterial stiffness
     ever_smoker         : smoked_100_cigarettes_lifetime == 1
     current_smoker      : currently_smoke_cigarettes == 1
 

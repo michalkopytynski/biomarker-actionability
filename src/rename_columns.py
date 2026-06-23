@@ -244,21 +244,21 @@ RENAME_MAP = {
     'MCQ370D': 'currently_reducing_fat',
     'MCQ380': 'healthy_weight_self_perception',
  
-    # Accelerometer (daily summary)
-    'PAXDAYD': 'accel_day_of_data',
+    # Accelerometer (daily summary) - NHANES PAXDAY_G codebook
+    'PAXDAYD':  'accel_day_of_data',
     'PAXDAYWD': 'accel_weekday_weekend',
     'PAXSSNDP': 'accel_data_start_second',
-    'PAXMSTD': 'accel_mims_sum_daily',
-    'PAXTMD': 'accel_total_minutes_daily',
-    'PAXAISMD': 'accel_awake_inactive_min',
-    'PAXVMD': 'accel_vigorous_min',
-    'PAXMTSD': 'accel_mims_sd_daily',
-    'PAXWWMD': 'accel_wake_wear_min',
-    'PAXSWMD': 'accel_sleep_wear_min',
-    'PAXNWMD': 'accel_nonwear_min',
-    'PAXUMD': 'accel_unknown_min',
-    'PAXLXSD': 'accel_log_mims_sd',
-    'PAXQFD': 'accel_quality_flag',
+    'PAXMSTD':  'accel_day_start_time',     # Start time HH:MM:SS - metadata, not a feature
+    'PAXTMD':   'accel_total_minutes_daily',
+    'PAXAISMD': 'accel_idle_sleep_count',   # Count of 80Hz samples in idle/sleep mode
+    'PAXVMD':   'accel_valid_min_daily',    # Valid minutes with data, no QC flag
+    'PAXMTSD':  'accel_mims_sum_daily',     # Day sum: MIMS triaxial value - the real activity metric
+    'PAXWWMD':  'accel_wake_wear_min',
+    'PAXSWMD':  'accel_sleep_wear_min',
+    'PAXNWMD':  'accel_nonwear_min',
+    'PAXUMD':   'accel_unknown_min',
+    'PAXLXSD':  'accel_lux_sum',            # Day sum: lux values for valid minutes
+    'PAXQFD':   'accel_quality_flag',
  
     # Prescriptions
     'RXDUSE': 'takes_prescription_medication',

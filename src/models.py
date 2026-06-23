@@ -41,7 +41,7 @@ def train_lgbm(train_df, feature_cols, target, n_trials=50, cv=None):
     Returns
     -------
     oof_preds : ndarray, shape (len(train_df),)
-    best_params : dict — hyperparameters from the last fold (used for final retraining)
+    best_params : dict, hyperparameters from the last fold (used for final retraining)
     """
     if cv is None:
         cv = _DEFAULT_CV
@@ -96,7 +96,7 @@ def train_tabpfn(train_df, feature_cols, target, cv=None):
     TabPFN across CV folds with stratified subsampling if the training fold exceeds
     TABPFN_MAX_TRAIN (10,000) samples.
 
-    TabPFN requires no hyperparameter tuning — this function only handles
+    TabPFN requires no hyperparameter tuning; this function only handles
     the CV loop, imputation, and subsampling.
 
     Returns
