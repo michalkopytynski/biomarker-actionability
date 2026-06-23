@@ -24,7 +24,7 @@ DCA asks: at a given risk threshold, does using a model to guide treatment actua
 
 The dataset covers 3,868 participants (OOF set), 290 hard CVD cases with 7.5% prevalence.
 
-Age alone achieves AUC 0.845. The full 19-feature blood panel achieves approximately 0.852, a gap of just 0.007.
+Age alone achieves AUC 0.845. The full 19-feature blood panel achieves approximately approximately 0.852 (LightGBM), a gap of just 0.007.
 
 Adding wearable-derived activity features (daily MIMS (Monitor-Independent Movement Summary, the accelerometer activity metric designed to be comparable across device brands) sum and variability) to the blood panel did not improve net benefit at any clinically relevant threshold. The `find_actionable_range` function returned no actionable range at population level. TabPFN was slightly better calibrated than LightGBM in the screening threshold range but this did not shift the decision curves.
 
